@@ -1,0 +1,366 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// ============== USER ==============
+model User {
+  id                    String   @id @default(uuid())
+  createdAt             DateTime @default(now())
+
+  email                 String?  @unique
+  username              String?  @unique
+  displayName           String?
+  avatarUrl             String?
+  isAdmin               Boolean  @default(false)
+
+  // Subscription
+  subscriptionStatus    String?  // 'free', 'pro', 'lifetime'
+  subscriptionPlan      String?
+  paymentProcessorUserId String? @unique
+  lemonSqueezyCustomerPortalUrl String?
+  datePaid              DateTime?
+  credits               Int      @default(3)
+
+  // Learning Stats
+  currentStreak         Int      @default(0)
+  longestStreak         Int      @default(0)
+  lastActiveDate        DateTime?
+  totalXp               Int      @default(0)
+  level                 Int      @default(1)
+
+  // Preferences
+  preferredLanguage     String   @default("python")
+  dailyGoal             Int      @default(3)
+
+  // Relations
+  progress              UserProblemProgress[]
+  submissions           Submission[]
+  reviewQueue           ReviewQueueItem[]
+  achievements          UserAchievement[]
+  studySessions         StudySession[]
+  files                 File[]
+}
+
+// ============== LEARNING PATH ==============
+model Topic {
+  id              String    @id @default(uuid())
+  slug            String    @unique
+  title           String
+  description     String    @db.Text
+  order           Int       @unique
+  iconName        String
+
+  // Content
+  theoryContent   String    @db.Text
+
+  // Meta
+  estimatedHours  Int
+  difficulty      String    // beginner, intermediate, advanced
+  isPublished     Boolean   @default(false)
+  isPremium       Boolean   @default(false)
+
+  // Relations
+  patterns        Pattern[]
+  prerequisites   TopicPrerequisite[] @relation("TopicHasPrerequisite")
+  requiredFor     TopicPrerequisite[] @relation("TopicIsPrerequisite")
+
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+}
+
+model TopicPrerequisite {
+  id              String  @id @default(uuid())
+  topicId         String
+  topic           Topic   @relation("TopicHasPrerequisite", fields: [topicId], references: [id])
+  prerequisiteId  String
+  prerequisite    Topic   @relation("TopicIsPrerequisite", fields: [prerequisiteId], references: [id])
+
+  @@unique([topicId, prerequisiteId])
+}
+
+// ============== PATTERNS ==============
+model Pattern {
+  id              String    @id @default(uuid())
+  slug            String    @unique
+  title           String
+  description     String    @db.Text
+  order           Int
+
+  // Content
+  explanation     String    @db.Text
+  template        String    @db.Text
+  visualization   String?   @db.Text
+
+  // Relations
+  topicId         String
+  topic           Topic     @relation(fields: [topicId], references: [id])
+  problems        Problem[]
+
+  // Meta
+  isPremium       Boolean   @default(false)
+
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@unique([topicId, order])
+}
+
+// ============== PROBLEMS ==============
+model Problem {
+  id                String    @id @default(uuid())
+  slug              String    @unique
+  title             String
+
+  // Difficulty
+  difficulty        String    // easy, medium, hard
+
+  // Content (Markdown)
+  description       String    @db.Text
+  constraints       String    @db.Text
+  examples          String    @db.Text
+  hints             String    @db.Text
+
+  // Solutions (JSON)
+  solutions         String    @db.Text
+
+  // Code
+  starterCode       String    @db.Text
+  testCases         String    @db.Text
+
+  // Meta
+  estimatedMinutes  Int       @default(30)
+  xpReward          Int       @default(10)
+  isPremium         Boolean   @default(false)
+  isPublished       Boolean   @default(true)
+
+  // Company Data
+  companies         ProblemCompany[]
+
+  // Relations
+  patternId         String
+  pattern           Pattern   @relation(fields: [patternId], references: [id])
+
+  progress          UserProblemProgress[]
+  submissions       Submission[]
+  reviewItems       ReviewQueueItem[]
+
+  // Similar Problems
+  similarProblems   String[]  @default([])
+
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  @@index([patternId])
+  @@index([difficulty])
+}
+
+model ProblemCompany {
+  id            String   @id @default(uuid())
+  problemId     String
+  problem       Problem  @relation(fields: [problemId], references: [id], onDelete: Cascade)
+  companyName   String
+  frequency     Int
+  lastAsked     DateTime?
+
+  @@unique([problemId, companyName])
+  @@index([companyName])
+}
+
+// ============== USER PROGRESS ==============
+model UserProblemProgress {
+  id              String    @id @default(uuid())
+  userId          String
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  problemId       String
+  problem         Problem   @relation(fields: [problemId], references: [id], onDelete: Cascade)
+
+  // Status
+  status          String    @default("not_started") // not_started, attempted, solved, mastered
+
+  // Learning
+  hintsUsed       Int       @default(0)
+  solutionViewed  Boolean   @default(false)
+
+  // Time Tracking
+  totalTimeSpent  Int       @default(0)
+  attemptCount    Int       @default(0)
+
+  // Best Solution
+  bestCode        String?   @db.Text
+  bestLanguage    String?
+  bestRuntime     Int?
+  bestMemory      Int?
+
+  // Spaced Repetition
+  easeFactor      Float     @default(2.5)
+  interval        Int       @default(1)
+  nextReviewDate  DateTime?
+
+  // Timestamps
+  firstAttemptAt  DateTime?
+  lastAttemptAt   DateTime?
+  solvedAt        DateTime?
+
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@unique([userId, problemId])
+  @@index([userId])
+  @@index([status])
+  @@index([nextReviewDate])
+}
+
+// ============== SUBMISSIONS ==============
+model Submission {
+  id            String   @id @default(uuid())
+  userId        String
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  problemId     String
+  problem       Problem  @relation(fields: [problemId], references: [id], onDelete: Cascade)
+
+  // Code
+  code          String   @db.Text
+  language      String
+
+  // Results
+  status        String   // pending, running, accepted, wrong_answer, time_limit, runtime_error, compile_error
+  runtime       Int?
+  memory        Int?
+
+  // Test Results (JSON)
+  testResults   String?  @db.Text
+  errorMessage  String?  @db.Text
+
+  // Timestamps
+  createdAt     DateTime @default(now())
+
+  @@index([userId])
+  @@index([problemId])
+  @@index([status])
+}
+
+// ============== SPACED REPETITION ==============
+model ReviewQueueItem {
+  id            String   @id @default(uuid())
+  userId        String
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  problemId     String
+  problem       Problem  @relation(fields: [problemId], references: [id], onDelete: Cascade)
+
+  // Schedule
+  dueDate       DateTime
+  priority      Int      @default(0)
+
+  // Review Result
+  lastReviewQuality Int?
+
+  createdAt     DateTime @default(now())
+
+  @@unique([userId, problemId])
+  @@index([userId, dueDate])
+}
+
+// ============== GAMIFICATION ==============
+model Achievement {
+  id            String   @id @default(uuid())
+  slug          String   @unique
+  title         String
+  description   String
+  iconName      String
+  xpReward      Int
+
+  // Unlock Criteria (JSON)
+  criteria      String   @db.Text
+
+  // Rarity
+  rarity        String   // common, rare, epic, legendary
+
+  users         UserAchievement[]
+}
+
+model UserAchievement {
+  id            String      @id @default(uuid())
+  userId        String
+  user          User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  achievementId String
+  achievement   Achievement @relation(fields: [achievementId], references: [id])
+
+  unlockedAt    DateTime    @default(now())
+
+  @@unique([userId, achievementId])
+}
+
+// ============== STUDY SESSIONS ==============
+model StudySession {
+  id            String   @id @default(uuid())
+  userId        String
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  startedAt     DateTime @default(now())
+  endedAt       DateTime?
+
+  // Stats
+  problemsSolved    Int  @default(0)
+  problemsAttempted Int  @default(0)
+  xpEarned          Int  @default(0)
+
+  @@index([userId])
+}
+
+// ============== ANALYTICS ==============
+model DailyStats {
+  id                Int      @id @default(autoincrement())
+  date              DateTime @unique
+
+  totalViews        Int      @default(0)
+  prevDayViewsChangePercent String @default("0")
+  userCount         Int      @default(0)
+  paidUserCount     Int      @default(0)
+  userDelta         Int      @default(0)
+  paidUserDelta     Int      @default(0)
+  totalRevenue      Float    @default(0)
+  totalProfit       Float    @default(0)
+  problemsSolved    Int      @default(0)
+  submissionsCount  Int      @default(0)
+
+  sources           PageViewSource[]
+
+  createdAt         DateTime @default(now())
+}
+
+model PageViewSource {
+  @@id([date, name])
+  name              String
+  date              DateTime @default(now())
+
+  dailyStats        DailyStats? @relation(fields: [dailyStatsId], references: [id])
+  dailyStatsId      Int?
+
+  visitors          Int
+}
+
+model Logs {
+  id                Int      @id @default(autoincrement())
+  createdAt         DateTime @default(now())
+
+  message           String
+  level             String
+}
+
+// ============== FILE UPLOAD ==============
+model File {
+  id            String   @id @default(uuid())
+  createdAt     DateTime @default(now())
+
+  user          User     @relation(fields: [userId], references: [id])
+  userId        String
+
+  name          String
+  type          String
+  s3Key         String
+}

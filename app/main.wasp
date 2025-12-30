@@ -1,0 +1,364 @@
+app AlgoForge {
+  wasp: {
+    version: "^0.19.0"
+  },
+
+  title: "AlgoForge - Master Coding Interviews",
+
+  head: [
+    "<link rel='icon' href='/favicon.ico' />",
+    "<meta charset='utf-8' />",
+    "<meta name='description' content='Master coding interviews with pattern-based learning. From beginner to FAANG-ready with spaced repetition and real code execution.' />",
+    "<meta name='author' content='AlgoForge' />",
+    "<meta name='keywords' content='coding interview, dsa, algorithms, data structures, leetcode, faang, interview prep' />",
+
+    "<meta property='og:type' content='website' />",
+    "<meta property='og:title' content='AlgoForge - Master Coding Interviews' />",
+    "<meta property='og:site_name' content='AlgoForge' />",
+    "<meta property='og:url' content='https://algoforge.dev' />",
+    "<meta property='og:description' content='Master coding interviews with pattern-based learning. From beginner to FAANG-ready.' />",
+    "<meta property='og:image' content='https://algoforge.dev/public-banner.webp' />",
+    "<meta name='twitter:image' content='https://algoforge.dev/public-banner.webp' />",
+    "<meta name='twitter:image:width' content='800' />",
+    "<meta name='twitter:image:height' content='400' />",
+    "<meta name='twitter:card' content='summary_large_image' />",
+
+    // Fonts
+    "<link rel='preconnect' href='https://fonts.googleapis.com' />",
+    "<link rel='preconnect' href='https://fonts.gstatic.com' crossorigin />",
+    "<link href='https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap' rel='stylesheet' />",
+  ],
+
+  auth: {
+    userEntity: User,
+    methods: {
+      email: {
+        fromField: {
+          name: "AlgoForge",
+          email: "hello@algoforge.dev"
+        },
+        emailVerification: {
+          clientRoute: EmailVerificationRoute,
+          getEmailContentFn: import { getVerificationEmailContent } from "@src/auth/email-and-pass/emails",
+        },
+        passwordReset: {
+          clientRoute: PasswordResetRoute,
+          getEmailContentFn: import { getPasswordResetEmailContent } from "@src/auth/email-and-pass/emails",
+        },
+        userSignupFields: import { getEmailUserFields } from "@src/auth/userSignupFields",
+      },
+      // google: {
+      //   userSignupFields: import { getGoogleUserFields } from "@src/auth/userSignupFields",
+      //   configFn: import { getGoogleAuthConfig } from "@src/auth/userSignupFields",
+      // },
+      // gitHub: {
+      //   userSignupFields: import { getGitHubUserFields } from "@src/auth/userSignupFields",
+      //   configFn: import { getGitHubAuthConfig } from "@src/auth/userSignupFields",
+      // },
+    },
+    onAuthFailedRedirectTo: "/login",
+    onAuthSucceededRedirectTo: "/dashboard",
+  },
+
+  db: {
+    seeds: [
+      import { seedMockUsers } from "@src/server/scripts/dbSeeds",
+      import { seedLessonContent } from "@src/server/scripts/dbSeeds",
+    ]
+  },
+
+  client: {
+    rootComponent: import App from "@src/client/App",
+  },
+
+  emailSender: {
+    provider: Dummy,
+    defaultFrom: {
+      name: "AlgoForge",
+      email: "hello@algoforge.dev"
+    },
+  },
+}
+
+// ============== PUBLIC ROUTES ==============
+route LandingPageRoute { path: "/", to: LandingPage }
+page LandingPage {
+  component: import LandingPage from "@src/landing-page/LandingPage"
+}
+
+route PricingPageRoute { path: "/pricing", to: PricingPage }
+page PricingPage {
+  component: import PricingPage from "@src/payment/PricingPage"
+}
+
+// ============== AUTH ROUTES ==============
+route LoginRoute { path: "/login", to: LoginPage }
+page LoginPage {
+  component: import Login from "@src/auth/LoginPage"
+}
+
+route SignupRoute { path: "/signup", to: SignupPage }
+page SignupPage {
+  component: import { Signup } from "@src/auth/SignupPage"
+}
+
+route RequestPasswordResetRoute { path: "/request-password-reset", to: RequestPasswordResetPage }
+page RequestPasswordResetPage {
+  component: import { RequestPasswordResetPage } from "@src/auth/email-and-pass/RequestPasswordResetPage",
+}
+
+route PasswordResetRoute { path: "/password-reset", to: PasswordResetPage }
+page PasswordResetPage {
+  component: import { PasswordResetPage } from "@src/auth/email-and-pass/PasswordResetPage",
+}
+
+route EmailVerificationRoute { path: "/email-verification", to: EmailVerificationPage }
+page EmailVerificationPage {
+  component: import { EmailVerificationPage } from "@src/auth/email-and-pass/EmailVerificationPage",
+}
+
+// ============== DASHBOARD ==============
+route DashboardRoute { path: "/dashboard", to: DashboardPage }
+page DashboardPage {
+  authRequired: true,
+  component: import DashboardPage from "@src/dashboard/DashboardPage"
+}
+
+// ============== ROADMAP ==============
+route RoadmapRoute { path: "/roadmap", to: RoadmapPage }
+page RoadmapPage {
+  authRequired: true,
+  component: import RoadmapPage from "@src/roadmap/RoadmapPage"
+}
+
+route TopicRoute { path: "/roadmap/:topicSlug", to: TopicPage }
+page TopicPage {
+  authRequired: true,
+  component: import TopicPage from "@src/roadmap/TopicPage"
+}
+
+route PatternRoute { path: "/roadmap/:topicSlug/:patternSlug", to: PatternPage }
+page PatternPage {
+  authRequired: true,
+  component: import PatternPage from "@src/roadmap/PatternPage"
+}
+
+// ============== PROBLEMS ==============
+route ProblemsRoute { path: "/problems", to: ProblemsListPage }
+page ProblemsListPage {
+  authRequired: true,
+  component: import ProblemsListPage from "@src/problems/ProblemsListPage"
+}
+
+route ProblemRoute { path: "/problems/:problemSlug", to: ProblemPage }
+page ProblemPage {
+  authRequired: true,
+  component: import ProblemPage from "@src/problems/ProblemPage"
+}
+
+route CompanyProblemsRoute { path: "/companies/:company", to: CompanyProblemsPage }
+page CompanyProblemsPage {
+  authRequired: true,
+  component: import CompanyProblemsPage from "@src/problems/CompanyProblemsPage"
+}
+
+// ============== REVIEW ==============
+route ReviewRoute { path: "/review", to: ReviewPage }
+page ReviewPage {
+  authRequired: true,
+  component: import ReviewPage from "@src/review/ReviewPage"
+}
+
+// ============== USER ==============
+route AccountRoute { path: "/account", to: AccountPage }
+page AccountPage {
+  authRequired: true,
+  component: import Account from "@src/user/AccountPage"
+}
+
+route ProfileRoute { path: "/profile", to: ProfilePage }
+page ProfilePage {
+  authRequired: true,
+  component: import ProfilePage from "@src/profile/ProfilePage"
+}
+
+route AchievementsRoute { path: "/achievements", to: AchievementsPage }
+page AchievementsPage {
+  authRequired: true,
+  component: import AchievementsPage from "@src/profile/AchievementsPage"
+}
+
+route SettingsRoute { path: "/settings", to: SettingsPage }
+page SettingsPage {
+  authRequired: true,
+  component: import SettingsPage from "@src/profile/SettingsPage"
+}
+
+// ============== PAYMENT ==============
+route CheckoutResultRoute { path: "/checkout", to: CheckoutResultPage }
+page CheckoutResultPage {
+  authRequired: true,
+  component: import CheckoutResultPage from "@src/payment/CheckoutResultPage"
+}
+
+// ============== ADMIN ==============
+route AdminRoute { path: "/admin", to: AnalyticsDashboardPage }
+page AnalyticsDashboardPage {
+  authRequired: true,
+  component: import AnalyticsDashboardPage from "@src/admin/dashboards/analytics/AnalyticsDashboardPage"
+}
+
+route AdminUsersRoute { path: "/admin/users", to: AdminUsersPage }
+page AdminUsersPage {
+  authRequired: true,
+  component: import AdminUsers from "@src/admin/dashboards/users/UsersDashboardPage"
+}
+
+route NotFoundRoute { path: "*", to: NotFoundPage }
+page NotFoundPage {
+  component: import { NotFoundPage } from "@src/client/components/NotFoundPage"
+}
+
+// ============== QUERIES ==============
+query getDashboardData {
+  fn: import { getDashboardData } from "@src/dashboard/operations",
+  entities: [User, UserProblemProgress, StudySession, ReviewQueueItem, Problem]
+}
+
+query getRoadmap {
+  fn: import { getRoadmap } from "@src/roadmap/operations",
+  entities: [Topic, Pattern, Problem, UserProblemProgress]
+}
+
+query getTopic {
+  fn: import { getTopic } from "@src/roadmap/operations",
+  entities: [Topic, Pattern, Problem, UserProblemProgress]
+}
+
+query getPattern {
+  fn: import { getPattern } from "@src/roadmap/operations",
+  entities: [Pattern, Problem, UserProblemProgress]
+}
+
+query getProblem {
+  fn: import { getProblem } from "@src/problems/operations",
+  entities: [Problem, UserProblemProgress, Submission]
+}
+
+query getProblems {
+  fn: import { getProblems } from "@src/problems/operations",
+  entities: [Problem, UserProblemProgress, ProblemCompany]
+}
+
+query getReviewQueue {
+  fn: import { getReviewQueue } from "@src/review/operations",
+  entities: [ReviewQueueItem, Problem]
+}
+
+query getUserProfile {
+  fn: import { getUserProfile } from "@src/profile/operations",
+  entities: [User, UserProblemProgress, UserAchievement, Achievement]
+}
+
+query getPaginatedUsers {
+  fn: import { getPaginatedUsers } from "@src/user/operations",
+  entities: [User]
+}
+
+query getCustomerPortalUrl {
+  fn: import { getCustomerPortalUrl } from  "@src/payment/operations",
+  entities: [User]
+}
+
+query getDailyStats {
+  fn: import { getDailyStats } from "@src/analytics/operations",
+  entities: [User, DailyStats]
+}
+
+// ============== ACTIONS ==============
+action submitCode {
+  fn: import { submitCode } from "@src/problems/operations",
+  entities: [Problem, Submission, UserProblemProgress, User, ReviewQueueItem]
+}
+
+action runCode {
+  fn: import { runCode } from "@src/problems/operations",
+  entities: []
+}
+
+action saveProgress {
+  fn: import { saveProgress } from "@src/problems/operations",
+  entities: [UserProblemProgress]
+}
+
+action useHint {
+  fn: import { useHint } from "@src/problems/operations",
+  entities: [Problem, UserProblemProgress]
+}
+
+action viewSolution {
+  fn: import { viewSolution } from "@src/problems/operations",
+  entities: [Problem, UserProblemProgress]
+}
+
+action completeReview {
+  fn: import { completeReview } from "@src/review/operations",
+  entities: [ReviewQueueItem, UserProblemProgress]
+}
+
+action updateSettings {
+  fn: import { updateSettings } from "@src/profile/operations",
+  entities: [User]
+}
+
+action updateIsUserAdminById {
+  fn: import { updateIsUserAdminById } from "@src/user/operations",
+  entities: [User]
+}
+
+action generateCheckoutSession {
+  fn: import { generateCheckoutSession } from "@src/payment/operations",
+  entities: [User]
+}
+
+// ============== JOBS ==============
+job dailyStatsJob {
+  executor: PgBoss,
+  perform: {
+    fn: import { calculateDailyStats } from "@src/analytics/stats"
+  },
+  schedule: {
+    cron: "0 * * * *"
+  },
+  entities: [User, DailyStats, Logs, PageViewSource]
+}
+
+job checkAchievements {
+  executor: PgBoss,
+  perform: {
+    fn: import { checkAchievements } from "@src/server/jobs/achievements"
+  },
+  schedule: {
+    cron: "*/15 * * * *"
+  },
+  entities: [User, UserAchievement, Achievement, UserProblemProgress]
+}
+
+job updateStreaks {
+  executor: PgBoss,
+  perform: {
+    fn: import { updateStreaks } from "@src/server/jobs/streaks"
+  },
+  schedule: {
+    cron: "0 0 * * *"
+  },
+  entities: [User]
+}
+
+// ============== API ==============
+api paymentsWebhook {
+  fn: import { paymentsWebhook } from "@src/payment/webhook",
+  entities: [User],
+  middlewareConfigFn: import { paymentsMiddlewareConfigFn } from "@src/payment/webhook",
+  httpRoute: (POST, "/payments-webhook")
+}
