@@ -238,6 +238,7 @@ show_help() {
     echo "  ${GREEN}migrate${NC}    - Run database migrations"
     echo "  ${GREEN}seed${NC}       - Seed lesson content"
     echo "  ${GREEN}reset${NC}      - Reset db and re-seed everything"
+    echo "  ${GREEN}clean${NC}      - Clean wasp build + reinstall deps (fixes 404s)"
     echo "  ${GREEN}status${NC}     - Check status of services"
     echo "  ${GREEN}help${NC}       - Show this help message"
     echo ""
@@ -287,6 +288,23 @@ reset_db() {
     print_success "Database reset complete"
 }
 
+# Clean wasp build
+clean_build() {
+    print_header "Cleaning Wasp Build"
+    cd "$APP_DIR"
+
+    print_step "Removing node_modules (force)..."
+    rm -rf node_modules .wasp/out/server/node_modules .wasp/out/web-app/node_modules 2>/dev/null || true
+
+    print_step "Removing .wasp directory..."
+    rm -rf .wasp
+
+    print_step "Clearing npm cache..."
+    npm cache clean --force 2>/dev/null || true
+
+    print_success "Clean complete! Run './run.sh dev' to start fresh"
+}
+
 # Main command handler
 case "${1:-help}" in
     setup)
@@ -314,6 +332,9 @@ case "${1:-help}" in
         ;;
     reset)
         reset_db
+        ;;
+    clean)
+        clean_build
         ;;
     status)
         check_status

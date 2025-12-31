@@ -116,13 +116,13 @@ export const getTopic = async (
         include: {
           problems: {
             where: { isPublished: true },
-            orderBy: { difficulty: "asc" },
+            orderBy: { order: "asc" },
             select: {
               id: true,
               slug: true,
               title: true,
               difficulty: true,
-              xpReward: true,
+              order: true,
             },
           },
         },
@@ -185,7 +185,7 @@ export const getPattern = async (
       },
       problems: {
         where: { isPublished: true },
-        orderBy: { difficulty: "asc" },
+        orderBy: { order: "asc" },
         include: {
           companies: true,
         },

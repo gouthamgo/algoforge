@@ -222,7 +222,7 @@ page NotFoundPage {
 // ============== QUERIES ==============
 query getDashboardData {
   fn: import { getDashboardData } from "@src/dashboard/operations",
-  entities: [User, UserProblemProgress, StudySession, ReviewQueueItem, Problem]
+  entities: [User, UserProblemProgress, StudySession, ReviewQueueItem, Problem, Pattern]
 }
 
 query getRoadmap {

@@ -115,6 +115,7 @@ model Problem {
   id                String    @id @default(uuid())
   slug              String    @unique
   title             String
+  order             Int       @default(0)  // Order within pattern for learning sequence
 
   // Difficulty
   difficulty        String    // easy, medium, hard

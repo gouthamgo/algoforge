@@ -9,6 +9,7 @@ type GetDashboardDataContext = {
     StudySession: any;
     ReviewQueueItem: any;
     Problem: any;
+    Pattern: any;
   };
 };
 
@@ -20,7 +21,7 @@ export const getDashboardData = async (
     throw new HttpError(401, "Not authenticated");
   }
 
-  const { User, UserProblemProgress, ReviewQueueItem, Problem } = context.entities;
+  const { User, UserProblemProgress, ReviewQueueItem, Problem, Pattern } = context.entities;
 
   // Get user with stats
   const user = await User.findUnique({
@@ -91,7 +92,7 @@ export const getDashboardData = async (
     take: 10,
   });
 
-  // Get next recommended problems
+  // Get next recommended problems - ordered by learning sequence
   const nextProblems = await Problem.findMany({
     where: {
       isPublished: true,
@@ -109,19 +110,59 @@ export const getDashboardData = async (
       slug: true,
       title: true,
       difficulty: true,
-      xpReward: true,
+      order: true,
       pattern: {
         select: {
           title: true,
           slug: true,
+          order: true,
         },
       },
     },
     orderBy: [
-      { difficulty: "asc" },
-      { createdAt: "asc" },
+      { pattern: { order: "asc" } },
+      { order: "asc" },
     ],
     take: 5,
+  });
+
+  // Get pattern progress
+  const patterns = await Pattern.findMany({
+    orderBy: { order: "asc" },
+    select: {
+      id: true,
+      slug: true,
+      title: true,
+      order: true,
+      problems: {
+        where: { isPublished: true },
+        select: { id: true },
+      },
+    },
+  });
+
+  // Get solved problem IDs for this user
+  const solvedProblems = await UserProblemProgress.findMany({
+    where: {
+      userId: context.user.id,
+      status: "solved",
+    },
+    select: { problemId: true },
+  });
+
+  const solvedProblemIds = new Set(solvedProblems.map((p: any) => p.problemId));
+
+  // Calculate progress for each pattern
+  const patternProgress = patterns.map((pattern: any) => {
+    const problemIds = pattern.problems.map((p: any) => p.id);
+    const solved = problemIds.filter((id: string) => solvedProblemIds.has(id)).length;
+    return {
+      slug: pattern.slug,
+      title: pattern.title,
+      order: pattern.order,
+      solved,
+      total: problemIds.length,
+    };
   });
 
   return {
@@ -131,12 +172,11 @@ export const getDashboardData = async (
       totalAttempted: attemptedCount,
       solvedToday,
       streak: user?.currentStreak || 0,
-      xp: user?.totalXp || 0,
-      level: user?.level || 1,
       reviewsDue,
       dailyGoal: user?.dailyGoal || 3,
     },
     recentActivity,
     nextProblems,
+    patternProgress,
   };
 };
