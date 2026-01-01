@@ -37,6 +37,17 @@ model User {
   preferredLanguage     String   @default("python")
   dailyGoal             Int      @default(3)
 
+  // Onboarding
+  hasCompletedOnboarding  Boolean   @default(false)
+  onboardingGoal          String?   // 'career', 'startup', 'upskill', 'curious'
+  experienceLevel         String?   // 'beginner', 'intermediate', 'advanced'
+  timeCommitment          String?   // '15min', '30min', '1hour', 'weekends'
+  onboardingCompletedAt   DateTime?
+
+  // Daily Tracking
+  problemsSolvedToday     Int       @default(0)
+  lastDailyReset          DateTime?
+
   // Relations
   progress              UserProblemProgress[]
   submissions           Submission[]
@@ -44,6 +55,7 @@ model User {
   achievements          UserAchievement[]
   studySessions         StudySession[]
   files                 File[]
+  celebrations          Celebration[]
 }
 
 // ============== LEARNING PATH ==============
@@ -275,6 +287,11 @@ model Achievement {
   iconName      String
   xpReward      Int
 
+  // Category & Display
+  category      String   @default("completion") // 'streak', 'completion', 'mastery', 'speed', 'special', 'milestone'
+  iconEmoji     String?
+  order         Int      @default(0)
+
   // Unlock Criteria (JSON)
   criteria      String   @db.Text
 
@@ -294,6 +311,28 @@ model UserAchievement {
   unlockedAt    DateTime    @default(now())
 
   @@unique([userId, achievementId])
+}
+
+// ============== CELEBRATIONS ==============
+model Celebration {
+  id              String    @id @default(uuid())
+  userId          String
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Type of celebration
+  type            String    // 'achievement', 'level_up', 'streak_milestone', 'daily_goal', 'pattern_complete'
+  referenceId     String?   // Achievement ID, level number, pattern slug, etc.
+  xpAwarded       Int       @default(0)
+
+  // Interaction tracking
+  seenAt          DateTime?
+  sharedAt        DateTime?
+  sharedPlatform  String?   // 'twitter', 'linkedin', 'facebook', 'reddit', 'link'
+
+  createdAt       DateTime  @default(now())
+
+  @@index([userId, seenAt])
+  @@index([userId, createdAt])
 }
 
 // ============== STUDY SESSIONS ==============

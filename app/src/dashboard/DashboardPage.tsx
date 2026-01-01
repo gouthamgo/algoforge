@@ -1,5 +1,5 @@
 import { useQuery } from "wasp/client/operations";
-import { getDashboardData } from "wasp/client/operations";
+import { getDashboardData, getGamificationData, getPendingCelebrations } from "wasp/client/operations";
 import { Link } from "react-router-dom";
 import { useEffect, useState } from "react";
 import {
@@ -20,7 +20,13 @@ import {
   TrendingUp,
   Clock,
   BookOpen,
+  Award,
+  Star,
 } from "lucide-react";
+import { DailyGoal } from "../gamification/components/DailyGoal";
+import { BadgeShowcase } from "../gamification/components/AchievementBadge";
+import { LearningPathVisualizer } from "../learning-path/components/LearningPathVisualizer";
+import { CelebrationModal } from "../celebration/components/CelebrationModal";
 
 // Type for pattern progress from API
 interface PatternProgress {
@@ -253,6 +259,21 @@ function StatCard({ icon: Icon, label, value, suffix, description, color, delay 
 
 export default function DashboardPage() {
   const { data, isLoading, error } = useQuery(getDashboardData);
+  const { data: gamificationData } = useQuery(getGamificationData);
+  const { data: celebrationsData } = useQuery(getPendingCelebrations);
+  const [activeCelebration, setActiveCelebration] = useState<any>(null);
+  const [showCelebration, setShowCelebration] = useState(false);
+
+  // Show pending celebrations
+  useEffect(() => {
+    if (celebrationsData?.length && !showCelebration) {
+      const pending = celebrationsData[0];
+      if (pending) {
+        setActiveCelebration(pending);
+        setShowCelebration(true);
+      }
+    }
+  }, [celebrationsData, showCelebration]);
 
   if (isLoading) {
     return (
@@ -434,6 +455,16 @@ export default function DashboardPage() {
               delay="0.2s"
             />
           </div>
+
+          {/* Daily Goal Widget */}
+          {gamificationData && (
+            <div className="animate-fade-up mb-10" style={{ animationDelay: '0.25s' }}>
+              <DailyGoal
+                completed={gamificationData.dailyGoal.completed}
+                target={gamificationData.dailyGoal.target}
+              />
+            </div>
+          )}
 
           {/* Main Content Grid */}
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
@@ -701,6 +732,23 @@ export default function DashboardPage() {
                 </div>
               </div>
 
+              {/* Learning Path Visualizer (Compact) */}
+              <div className="animate-fade-up" style={{ animationDelay: '0.45s' }}>
+                <LearningPathVisualizer compact={true} showRecommendation={true} />
+              </div>
+
+              {/* Badge Showcase */}
+              {gamificationData && (
+                <div className="animate-fade-up" style={{ animationDelay: '0.5s' }}>
+                  <BadgeShowcase
+                    unlocked={gamificationData.achievements.unlocked}
+                    nextUp={gamificationData.achievements.nextUp}
+                    totalUnlocked={gamificationData.achievements.totalUnlocked}
+                    totalAvailable={gamificationData.achievements.totalAvailable}
+                  />
+                </div>
+              )}
+
               {/* Recent Activity */}
               {recentActivity && recentActivity.length > 0 && (
                 <div className="animate-fade-up" style={{ animationDelay: '0.45s' }}>
@@ -772,6 +820,18 @@ export default function DashboardPage() {
           animation: fade-up 0.6s ease-out both;
         }
       `}</style>
+
+      {/* Celebration Modal */}
+      {activeCelebration && (
+        <CelebrationModal
+          isOpen={showCelebration}
+          onClose={() => {
+            setShowCelebration(false);
+            setActiveCelebration(null);
+          }}
+          celebration={activeCelebration}
+        />
+      )}
     </div>
   );
 }

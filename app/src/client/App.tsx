@@ -1,5 +1,8 @@
 import { useEffect, useMemo } from "react";
-import { Outlet, useLocation } from "react-router-dom";
+import { Outlet, useLocation, useNavigate } from "react-router-dom";
+import { useAuth } from "wasp/client/auth";
+import { useQuery } from "wasp/client/operations";
+import { getOnboardingStatus } from "wasp/client/operations";
 import { routes } from "wasp/client/router";
 import { Toaster } from "../client/components/ui/toaster";
 import "./Main.css";
@@ -16,6 +19,12 @@ import CookieConsentBanner from "./components/cookie-consent/Banner";
  */
 export default function App() {
   const location = useLocation();
+  const navigate = useNavigate();
+  const { data: user } = useAuth();
+  const { data: onboardingStatus } = useQuery(getOnboardingStatus, undefined, {
+    enabled: !!user,
+  });
+
   const isMarketingPage = useMemo(() => {
     return (
       location.pathname === "/" || location.pathname.startsWith("/pricing")
@@ -47,6 +56,20 @@ export default function App() {
       }
     }
   }, [location]);
+
+  // Redirect to onboarding if user hasn't completed it
+  useEffect(() => {
+    if (user && onboardingStatus && !onboardingStatus.hasCompletedOnboarding) {
+      // Don't redirect if already on onboarding page or auth pages
+      const excludedPaths = ["/onboarding", "/login", "/signup", "/"];
+      const isExcluded = excludedPaths.some(
+        (path) => location.pathname === path || location.pathname.startsWith("/celebrate")
+      );
+      if (!isExcluded) {
+        navigate("/onboarding");
+      }
+    }
+  }, [user, onboardingStatus, location.pathname, navigate]);
 
   return (
     <>

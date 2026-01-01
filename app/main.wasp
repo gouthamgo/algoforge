@@ -169,6 +169,19 @@ page ReviewPage {
   component: import ReviewPage from "@src/review/ReviewPage"
 }
 
+// ============== ONBOARDING ==============
+route OnboardingRoute { path: "/onboarding", to: OnboardingPage }
+page OnboardingPage {
+  authRequired: true,
+  component: import OnboardingPage from "@src/onboarding/OnboardingPage"
+}
+
+// ============== CELEBRATIONS ==============
+route CelebrationRoute { path: "/celebrate/:celebrationId", to: CelebrationPage }
+page CelebrationPage {
+  component: import CelebrationPage from "@src/celebration/CelebrationPage"
+}
+
 // ============== USER ==============
 route AccountRoute { path: "/account", to: AccountPage }
 page AccountPage {
@@ -275,10 +288,44 @@ query getDailyStats {
   entities: [User, DailyStats]
 }
 
+// ============== ONBOARDING QUERIES ==============
+query getOnboardingStatus {
+  fn: import { getOnboardingStatus } from "@src/onboarding/operations",
+  entities: [User]
+}
+
+// ============== GAMIFICATION QUERIES ==============
+query getGamificationData {
+  fn: import { getGamificationData } from "@src/gamification/operations",
+  entities: [User, UserAchievement, Achievement, UserProblemProgress]
+}
+
+query getHeaderStats {
+  fn: import { getHeaderStats } from "@src/gamification/operations",
+  entities: [User]
+}
+
+// ============== CELEBRATION QUERIES ==============
+query getPendingCelebrations {
+  fn: import { getPendingCelebrations } from "@src/celebration/operations",
+  entities: [Achievement]
+}
+
+query getCelebration {
+  fn: import { getCelebration } from "@src/celebration/operations",
+  entities: [Achievement, User]
+}
+
+// ============== LEARNING PATH QUERIES ==============
+query getLearningPath {
+  fn: import { getLearningPath } from "@src/learning-path/operations",
+  entities: [Pattern, UserProblemProgress, User, Problem]
+}
+
 // ============== ACTIONS ==============
 action submitCode {
   fn: import { submitCode } from "@src/problems/operations",
-  entities: [Problem, Submission, UserProblemProgress, User, ReviewQueueItem]
+  entities: [Problem, Submission, UserProblemProgress, User, ReviewQueueItem, Achievement, UserAchievement]
 }
 
 action runCode {
@@ -318,6 +365,23 @@ action updateIsUserAdminById {
 
 action generateCheckoutSession {
   fn: import { generateCheckoutSession } from "@src/payment/operations",
+  entities: [User]
+}
+
+// ============== ONBOARDING ACTIONS ==============
+action completeOnboarding {
+  fn: import { completeOnboarding } from "@src/onboarding/operations",
+  entities: [User]
+}
+
+// ============== CELEBRATION ACTIONS ==============
+action markCelebrationSeen {
+  fn: import { markCelebrationSeen } from "@src/celebration/operations",
+  entities: [User]
+}
+
+action shareCelebration {
+  fn: import { shareCelebration } from "@src/celebration/operations",
   entities: [User]
 }
 

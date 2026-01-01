@@ -5,6 +5,8 @@ import { useAuth } from "wasp/client/auth";
 import { routes } from "wasp/client/router";
 import { UserDropdown } from "../../../user/UserDropdown";
 import { cn } from "../../utils";
+import { HeaderXPBadge } from "../gamification/HeaderXPBadge";
+import { HeaderStreakBadge } from "../gamification/HeaderStreakBadge";
 
 export interface NavigationItem {
   name: string;
@@ -78,7 +80,11 @@ export default function NavBar({
                 </Link>
               </>
             ) : (
-              <UserDropdown user={user} />
+              <div className="flex items-center gap-3">
+                <HeaderXPBadge />
+                <HeaderStreakBadge />
+                <UserDropdown user={user} />
+              </div>
             )}
           </div>
 
@@ -141,7 +147,11 @@ export default function NavBar({
                   </Link>
                 </div>
               ) : (
-                <div className="px-1">
+                <div className="px-1 space-y-3">
+                  <div className="flex items-center gap-2">
+                    <HeaderXPBadge />
+                    <HeaderStreakBadge />
+                  </div>
                   <UserDropdown user={user} />
                 </div>
               )}

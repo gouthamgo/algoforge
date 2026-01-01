@@ -28,6 +28,8 @@ type SubmitCodeContext = {
     UserProblemProgress: any;
     User: any;
     ReviewQueueItem: any;
+    Achievement: any;
+    UserAchievement: any;
   };
 };
 
